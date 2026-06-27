@@ -1,6 +1,8 @@
 {
   "name": "rug-pool-frontend",
-  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +11,7 @@
     "postinstall": "chmod +x node_modules/.bin/vite 2>/dev/null || true"
   },
   "dependencies": {
+    "lightweight-charts": "^5.2.0",
     "svelte": "^5.0.0"
   },
   "devDependencies": {

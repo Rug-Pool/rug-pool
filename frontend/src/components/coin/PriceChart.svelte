@@ -1,89 +1,127 @@
 <script lang="ts">
-  let { data = [] }: { data?: { time: number; price: number }[] } = $props();
+  import { onMount, onDestroy } from 'svelte';
+  import { createChart, type IChartApi, type ISeriesApi, type LineData, type Time } from 'lightweight-charts';
 
-  let canvasEl: HTMLCanvasElement;
-  let tooltip = $state<{ x: number; y: number; price: string; time: string } | null>(null);
+  let { data = [], pair = '' }: { data?: { time: number; price: number }[]; pair?: string } = $props();
 
-  $effect(() => {
-    if (!canvasEl) return;
-    const ctx = canvasEl.getContext('2d');
-    if (!ctx || data.length < 2) return;
+  let containerEl: HTMLDivElement;
+  let chart: IChartApi | null = null;
+  let lineSeries: ISeriesApi<'Line'> | null = null;
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvasEl.getBoundingClientRect();
-    canvasEl.width = rect.width * dpr;
-    canvasEl.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+  function initChart() {
+    if (!containerEl || data.length < 2) return;
 
-    const w = rect.width;
-    const h = rect.height;
-    const pad = { top: 20, right: 20, bottom: 30, left: 50 };
-    const chartW = w - pad.left - pad.right;
-    const chartH = h - pad.top - pad.bottom;
-
-    const prices = data.map((d) => d.price);
-    const minP = Math.min(...prices) * 0.995;
-    const maxP = Math.max(...prices) * 1.005;
-    const range = maxP - minP || 1;
-
-    const xs = (i: number) => pad.left + (i / (data.length - 1)) * chartW;
-    const ys = (p: number) => pad.top + chartH - ((p - minP) / range) * chartH;
-
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.strokeStyle = '#8b5cf6';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    data.forEach((d, i) => {
-      const x = xs(i);
-      const y = ys(d.price);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    chart = createChart(containerEl, {
+      layout: {
+        background: { type: 'solid', color: 'transparent' },
+        textColor: '#a1a1aa',
+        fontSize: 11,
+        fontFamily: 'JetBrains Mono, monospace',
+      },
+      grid: {
+        vertLines: { color: '#27272a' },
+        horzLines: { color: '#27272a' },
+      },
+      crosshair: {
+        vertLine: { color: '#8b5cf6', width: 1, style: 2, labelBackgroundColor: '#8b5cf6' },
+        horzLine: { color: '#8b5cf6', width: 1, style: 2, labelBackgroundColor: '#8b5cf6' },
+      },
+      rightPriceScale: {
+        borderColor: '#3f3f46',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      timeScale: {
+        borderColor: '#3f3f46',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      handleScroll: false,
+      handleScale: false,
+      width: containerEl.clientWidth,
+      height: containerEl.clientHeight,
     });
-    ctx.stroke();
 
-    const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
-    gradient.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
-    gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
-    ctx.fillStyle = gradient;
-    ctx.lineTo(xs(data.length - 1), pad.top + chartH);
-    ctx.lineTo(xs(0), pad.top + chartH);
-    ctx.closePath();
-    ctx.fill();
+    lineSeries = chart.addLineSeries({
+      color: '#8b5cf6',
+      lineWidth: 2,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 4,
+      crosshairMarkerBorderColor: '#8b5cf6',
+      crosshairMarkerBackgroundColor: '#8b5cf6',
+      priceFormat: {
+        type: 'custom',
+        formatter: (price: number) => '$' + price.toFixed(6),
+      },
+    });
 
-    ctx.fillStyle = '#52525b';
-    ctx.font = '11px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    const labelCount = Math.min(5, data.length);
-    const step = Math.floor((data.length - 1) / (labelCount - 1));
-    for (let i = 0; i < labelCount; i++) {
-      const idx = Math.min(i * step, data.length - 1);
-      const t = new Date(data[idx].time);
-      ctx.fillText(`${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`, xs(idx), h - 8);
+    const sorted = [...data].sort((a, b) => a.time - b.time);
+    const seriesData: LineData[] = sorted.map((d) => ({
+      time: Math.floor(d.time / 1000) as Time,
+      value: d.price,
+    }));
+    lineSeries.setData(seriesData);
+    chart.timeScale().fitContent();
+  }
+
+  function handleResize() {
+    if (chart && containerEl) {
+      chart.applyOptions({
+        width: containerEl.clientWidth,
+        height: containerEl.clientHeight,
+      });
     }
+  }
 
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#52525b';
-    const yLabels = [minP, (minP + maxP) / 2, maxP];
-    yLabels.forEach((p) => {
-      ctx.fillText('$' + p.toFixed(6), pad.left - 8, ys(p) + 4);
-    });
+  onMount(() => {
+    initChart();
+    window.addEventListener('resize', handleResize);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('resize', handleResize);
+    if (chart) {
+      chart.remove();
+      chart = null;
+      lineSeries = null;
+    }
   });
 </script>
 
-<div class="chart-wrapper">
-  <canvas bind:this={canvasEl} class="chart"></canvas>
+<div class="chart-container">
+  <div class="chart-header">
+    <span class="chart-pair">{pair || 'MON'}</span>
+  </div>
+  <div bind:this={containerEl} class="chart-box"></div>
 </div>
 
 <style>
-  .chart-wrapper {
+  .chart-container {
     width: 100%;
-    height: 100%;
-    min-height: 250px;
+    display: flex;
+    flex-direction: column;
   }
 
-  .chart {
+  .chart-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .chart-pair {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--gray-700);
+    border-radius: 4px;
+    background: var(--bg-primary);
+  }
+
+  .chart-box {
     width: 100%;
-    height: 100%;
+    height: 300px;
     min-height: 250px;
   }
 </style>

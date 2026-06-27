@@ -11,6 +11,7 @@
     <div class="spacer"></div>
     <div class="links">
       <a href="#/leaderboard" class="link" onclick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>Leaderboard</a>
+      <a href="#/portfolio" class="link" onclick={(e) => { e.preventDefault(); navigate('/portfolio'); }}>Portfolio</a>
       <a href="#/faq" class="link" onclick={(e) => { e.preventDefault(); navigate('/faq'); }}>FAQ</a>
     </div>
     <WalletButton />

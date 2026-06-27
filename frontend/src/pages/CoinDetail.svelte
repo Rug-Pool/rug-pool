@@ -21,6 +21,7 @@
     holders: 342,
     cycleEnd: Date.now() + 3600000 * 3 + 1200000,
     round: 2,
+    round: 2,
     totalRounds: 5,
     flipsPending: 87,
     isFoundingMember: true,
@@ -116,7 +117,7 @@
         </div>
       {/if}
       <div class="chart-section">
-        <PriceChart data={MOCK_PRICES} />
+        <PriceChart data={MOCK_PRICES} pair="{MOCK_COIN.symbol}/MON" />
       </div>
       <div class="tracker-section">
         <CycleTracker
@@ -305,7 +306,7 @@
     background: var(--bg-card);
     border: 1px solid var(--gray-700);
     border-radius: 10px;
-    padding: 1.25rem;
+    padding: 1rem;
   }
 
   .tracker-section {

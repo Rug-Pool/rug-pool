@@ -12,6 +12,7 @@
     holders: number;
     poolSize: number;
     cycleEnd: number;
+    round?: number;
     image?: string;
     isFoundingMember?: boolean;
     isFoundingProject?: boolean;
@@ -59,6 +60,10 @@
     <div class="stat">
       <span class="stat-label">Holders</span>
       <span class="stat-value">{coin.holders}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Cycle</span>
+      <span class="stat-value">#{coin.round || 1}</span>
     </div>
     <div class="stat">
       <span class="stat-label">Next Flip</span>

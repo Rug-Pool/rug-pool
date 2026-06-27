@@ -9,6 +9,7 @@
   import Onboard from './pages/Onboard.svelte';
   import Launch from './pages/Launch.svelte';
   import FAQ from './pages/FAQ.svelte';
+  import Portfolio from './pages/Portfolio.svelte';
 
   let route = $state(getRoute());
 
@@ -36,6 +37,8 @@
     <FAQ />
   {:else if route.page === 'launch'}
     <Launch />
+  {:else if route.page === 'portfolio'}
+    <Portfolio />
   {/if}
 </main>
 
