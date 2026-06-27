@@ -539,6 +539,47 @@
   }
 
   @media (max-width: 640px) {
+    .portfolio-header {
+      padding: 1rem;
+    }
+
+    .header-main {
+      gap: 1.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+    }
+
+    .header-sub {
+      font-size: 0.8125rem;
+      gap: 0.375rem;
+    }
+
+    .entry-card {
+      padding: 1rem;
+    }
+
+    .entry-row {
+      font-size: 0.8125rem;
+    }
+
+    .mono {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .entry-actions {
+      flex-wrap: wrap;
+    }
+
+    .buy-input {
+      min-width: 0;
+      width: 0;
+    }
+
     .entries {
       grid-template-columns: 1fr;
     }

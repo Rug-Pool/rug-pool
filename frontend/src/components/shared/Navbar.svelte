@@ -76,6 +76,7 @@
       <div class="links">
         <a href="#/leaderboard" class="link" onclick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>Leaderboard</a>
         <a href="#/faq" class="link" onclick={(e) => { e.preventDefault(); navigate('/faq'); }}>FAQ</a>
+        <a href="#/portfolio" class="link" onclick={(e) => { e.preventDefault(); navigate('/portfolio'); }}>Portfolio</a>
       </div>
       <button class="search-btn" aria-label="Search" onclick={openSearch}>
         <span class="material-symbols-outlined">search</span>
@@ -201,6 +202,10 @@
   }
 
   @media (max-width: 640px) {
+    .links {
+      display: none;
+    }
+
     .search-input {
       width: 45vw;
       max-width: none;

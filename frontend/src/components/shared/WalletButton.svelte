@@ -55,7 +55,9 @@
           <span class="popup-balance-label">Balance</span>
           <span class="popup-balance-value mono">{balance.toFixed(4)} MON</span>
         </div>
-        <button class="popup-nav" onclick={() => { showPopup = false; navigate('/portfolio'); }}>Portfolio</button>
+        <button class="popup-nav lnk" onclick={() => { showPopup = false; navigate('/leaderboard'); }}>Leaderboard</button>
+        <button class="popup-nav lnk" onclick={() => { showPopup = false; navigate('/faq'); }}>FAQ</button>
+        <button class="popup-nav lnk" onclick={() => { showPopup = false; navigate('/portfolio'); }}>Portfolio</button>
         <button class="popup-logout" onclick={handleDisconnect}>Disconnect</button>
       </div>
     {/if}
@@ -210,5 +212,15 @@
   }
   .popup-nav:hover {
     background: var(--gray-700);
+  }
+
+  .lnk {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .lnk {
+      display: block;
+    }
   }
 </style>
