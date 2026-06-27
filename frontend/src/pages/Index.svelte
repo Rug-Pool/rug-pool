@@ -263,7 +263,7 @@
     font-size: 1.25rem;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
-    color: var(--accent);
+    color: var(--text-primary);
   }
 
   .stats-bar .survivors {

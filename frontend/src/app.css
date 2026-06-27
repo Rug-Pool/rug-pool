@@ -73,6 +73,7 @@ button {
   border: none;
   outline: none;
   font-family: inherit;
+  border-radius: 9999px !important;
 }
 
 input, textarea {

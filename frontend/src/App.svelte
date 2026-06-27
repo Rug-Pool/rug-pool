@@ -69,12 +69,12 @@
     right: 2rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     background: var(--accent);
     color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    font-size: 0.9375rem;
+    padding: 1.125rem 2.25rem;
+    border-radius: 9999px;
+    font-size: 1.375rem;
     font-weight: 600;
     border: none;
     transition: background 0.15s, transform 0.15s;
@@ -97,8 +97,8 @@
     .fab {
       bottom: 1rem;
       right: 1rem;
-      padding: 0.625rem 1.25rem;
-      font-size: 0.875rem;
+      padding: 0.9375rem 1.875rem;
+      font-size: 1.25rem;
     }
   }
 </style>

@@ -153,6 +153,8 @@
 <style>
   .detail-page {
     padding-bottom: 3rem;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .back-row {
@@ -343,6 +345,11 @@
   @media (max-width: 768px) {
     .main-grid {
       grid-template-columns: 1fr;
+    }
+
+    .left-col,
+    .right-col {
+      min-width: 0;
     }
 
     .coin-hero {
