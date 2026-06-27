@@ -104,19 +104,19 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, var(--purple-700), var(--purple-600));
+    background: var(--accent);
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 10px;
     font-size: 0.9375rem;
     font-weight: 600;
-    border: 1px solid var(--purple-500);
+    border: none;
     transition: background 0.15s, transform 0.15s;
     z-index: 200;
     cursor: pointer;
   }
   .fab:hover {
-    background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
+    background: var(--accent-hover);
     transform: translateY(-1px);
   }
   .fab:active {

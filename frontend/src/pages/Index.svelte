@@ -156,13 +156,6 @@
 <svelte:window onclick={handleWindowClick} />
 
 <div class="page">
-  <div class="page-header">
-    <div>
-      <h1>Coin Feed</h1>
-      <p class="subtitle">Live memecoin launches on Monad. 24-hour lock, provably fair flips.</p>
-    </div>
-  </div>
-
   <div class="stats-bar">
     <div class="stat" onclick={(e) => { e.stopPropagation(); toggleTooltip('pool', e); }}>
       <span class="stat-value">$2.4M</span>
@@ -178,9 +171,10 @@
         <div class="tooltip" style="top: {tooltipY}px" onclick={(e) => e.stopPropagation()}>{STAT_TOOLTIPS.coins.desc}</div>
       {/if}
     </div>
-    <div class="stat" onclick={(e) => { e.stopPropagation(); toggleTooltip('holders', e); }}>
+    <div class="stat holders" style="padding-bottom: 0" onclick={(e) => { e.stopPropagation(); toggleTooltip('holders', e); }}>
       <span class="stat-value">2,397</span>
       <span class="stat-label">Total Holders</span>
+      <img src="/bg3.gif" alt="" class="stat-bg-img" />
       {#if activeTooltip === 'holders'}
         <div class="tooltip" style="top: {tooltipY}px" onclick={(e) => e.stopPropagation()}>{STAT_TOOLTIPS.holders.desc}</div>
       {/if}
@@ -205,6 +199,13 @@
       {#if activeTooltip === 'survivors'}
         <div class="tooltip" style="top: {tooltipY}px" onclick={(e) => e.stopPropagation()}>{STAT_TOOLTIPS.survivors.desc}</div>
       {/if}
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1>Memes on Monad</h1>
+      <p class="subtitle">The rug is scheduled. The dev is locked in too.</p>
     </div>
   </div>
 
@@ -287,6 +288,17 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 500;
+  }
+
+  .stat-bg-img {
+    position: absolute;
+    bottom: 0px;
+    right: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0.6;
   }
 
   .tooltip {

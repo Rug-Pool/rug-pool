@@ -65,12 +65,6 @@
 </script>
 
 <div class="detail-page">
-  <div class="back-row">
-    <button class="back-btn" onclick={() => navigate('/')}>
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-  </div>
-
   <div class="coin-hero">
     <div class="hero-left">
       <div class="coin-id">

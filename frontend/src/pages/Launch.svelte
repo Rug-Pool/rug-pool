@@ -58,9 +58,6 @@
 
 <div class="page">
   <div class="header">
-    <button class="back-btn" onclick={() => navigate(-1)}>
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
     <h1>Launch a Coin</h1>
   </div>
 

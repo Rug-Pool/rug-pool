@@ -7,8 +7,6 @@
   let balance = $state(15.432);
   let showPopup = $state(false);
 
-  let shortLabel = $derived(fullAddress.slice(0, 4));
-
   function handleConnect() {
     connected = true;
   }
@@ -42,12 +40,7 @@
 {#if connected}
   <div class="wallet-wrapper">
     <button class="wallet-btn connected" aria-label="Wallet menu" onclick={togglePopup}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-        <path d="M18 12a2 2 0 1 0 0 4h4v-4Z" />
-      </svg>
-      <span class="label">{shortLabel}</span>
+      <span class="material-symbols-outlined">menu</span>
     </button>
     {#if showPopup}
       <div class="popup" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { if (e.key === 'Escape') showPopup = false; }}>
@@ -69,11 +62,7 @@
   </div>
 {:else}
   <button class="wallet-btn icon-only" aria-label="Connect wallet" onclick={handleConnect}>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-      <path d="M18 12a2 2 0 1 0 0 4h4v-4Z" />
-    </svg>
+    <span class="material-symbols-outlined">account_balance_wallet</span>
   </button>
 {/if}
 
@@ -99,33 +88,35 @@
   }
 
   .icon-only {
-    background: linear-gradient(135deg, var(--purple-700), var(--purple-600));
-    border: 1px solid var(--purple-500);
-    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    padding: 0.25rem;
+    color: var(--text-secondary);
   }
   .icon-only:hover {
-    background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
+    background: transparent;
   }
-  .icon-only svg {
-    display: block;
+  .icon-only .material-symbols-outlined {
+    font-size: 1.5rem;
   }
 
   .connected {
-    background: var(--gray-700);
-    border: 1px solid var(--gray-600);
-    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    padding: 0.25rem;
+    color: var(--text-primary);
+    gap: 0.375rem;
   }
   .connected:hover {
-    background: var(--gray-600);
+    background: transparent;
   }
-
-  .label {
-    display: none;
+  .connected .material-symbols-outlined {
+    font-size: 1.5rem;
   }
 
   @media (min-width: 480px) {
     .connected {
-      padding: 0.5rem 1rem;
+      padding: 0.25rem 0.375rem;
     }
     .label {
       display: inline;

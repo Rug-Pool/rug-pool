@@ -5,9 +5,6 @@
 <div class="page">
   <div class="page-header">
     <div class="header-row">
-      <button class="back-btn" onclick={() => navigate('/')}>
-        <span class="material-symbols-outlined">arrow_back</span>
-      </button>
       <h1>FAQ</h1>
     </div>
     <p class="subtitle">Everything you need to know about Rug Pool.</p>
