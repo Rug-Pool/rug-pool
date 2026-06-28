@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Navbar from '$components/shared/Navbar.svelte';
+  import Footer from '$components/shared/Footer.svelte';
   import Notification from '$components/shared/Notification.svelte';
   import { initRouter, getRoute, navigate } from '$lib/router.svelte';
   import Index from './pages/Index.svelte';
@@ -50,6 +51,8 @@
       <Portfolio />
     {/if}
   </main>
+
+  <Footer />
 
   {#if route.page === 'feed'}
     <button class="fab" onclick={() => navigate('/launch')}>
