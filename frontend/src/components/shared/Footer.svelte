@@ -3,7 +3,7 @@
     <a href="https://github.com/Rug-Pool/rug-pool/blob/main/RugPool_Whitepaper.pdf" target="_blank" rel="noopener noreferrer">Whitepaper</a>
     <a href="https://t.me/rugpoolmonad" target="_blank" rel="noopener noreferrer">Telegram</a>
     <a href="https://t.me/rugpoolmonadbot" target="_blank" rel="noopener noreferrer">Telegram Bot</a>
-    <a href="#">Terms &amp; Conditions</a>
+    <a href="#/terms">Terms &amp; Conditions</a>
   </div>
 </footer>
 

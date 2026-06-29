@@ -4,7 +4,8 @@ type Route = { page: 'feed'; params: {} }
   | { page: 'onboard'; params: {} }
   | { page: 'faq'; params: {} }
   | { page: 'launch'; params: {} }
-  | { page: 'portfolio'; params: {} };
+  | { page: 'portfolio'; params: {} }
+  | { page: 'terms'; params: {} };
 
 let currentRoute = $state<Route>({ page: 'feed', params: {} });
 
@@ -29,6 +30,9 @@ function parseRoute(): Route {
   }
   if (hash === '/portfolio') {
     return { page: 'portfolio', params: {} };
+  }
+  if (hash === '/terms') {
+    return { page: 'terms', params: {} };
   }
   return { page: 'feed', params: {} };
 }

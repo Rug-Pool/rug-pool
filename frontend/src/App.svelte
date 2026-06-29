@@ -11,6 +11,7 @@
   import Launch from './pages/Launch.svelte';
   import FAQ from './pages/FAQ.svelte';
   import Portfolio from './pages/Portfolio.svelte';
+  import Terms from './pages/Terms.svelte';
 
   let route = $state(getRoute());
   let splash = $state(true);
@@ -49,6 +50,8 @@
       <Launch />
     {:else if route.page === 'portfolio'}
       <Portfolio />
+    {:else if route.page === 'terms'}
+      <Terms />
     {/if}
   </main>
 
