@@ -33,11 +33,15 @@ async function main() {
   const NEW_VRF = receipt.contractAddress;
   console.log(`New VRFConsumer: ${NEW_VRF}`);
 
-  // Wire new VRF to existing RugPool
-  const rugPoolAbi = JSON.parse(fs.readFileSync(
-    path.join(__dirname, '..', 'abis', 'RugPool.json'), 'utf8'
+  // Wire new VRF to existing RugPool (read from deployments.json)
+  const dep = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'deployments.json'), 'utf8'
   ));
-  const NEW_RUG_POOL = '0x6e8f3f4fbb12756a1f0f75f7c3736ddfd843509b';
+  const NEW_RUG_POOL = dep.contracts.RugPool;
+  const rugPoolArtifact = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'out', 'RugPool.sol', 'RugPool.json'), 'utf8'
+  ));
+  const rugPoolAbi = rugPoolArtifact.abi;
 
   let h = await walletClient.writeContract({
     address: NEW_RUG_POOL, abi: rugPoolAbi,

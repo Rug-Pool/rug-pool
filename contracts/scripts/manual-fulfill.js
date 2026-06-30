@@ -24,22 +24,35 @@ async function main() {
   ));
 
   const VRF = dep.contracts.VRFConsumer;
-  const SEQUENCE = 0n; // sequence number from the triggerFlip tx — update this
-  const MANUAL_SEED = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
 
-  console.log(`Calling manualFulfill on ${VRF}`);
-  console.log(`Sequence: ${SEQUENCE}, Seed: ${MANUAL_SEED}`);
+  // These are set per simulation run
+  const COIN_ADDRESS = process.argv[2];
+  const CYCLE_NUMBER = BigInt(process.argv[3] || '1');
+  const MANUAL_SEED = process.argv[4] ||
+    '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
+
+  if (!COIN_ADDRESS) {
+    console.error('Usage: node manual-fulfill.js <coinAddress> <cycleNumber> [seed]');
+    process.exit(1);
+  }
+
+  console.log(`VRFConsumer: ${VRF}`);
+  console.log(`Coin: ${COIN_ADDRESS}`);
+  console.log(`Cycle: ${CYCLE_NUMBER}`);
+  console.log(`Seed: ${MANUAL_SEED}`);
+  console.log('Calling manualFulfill...');
 
   const h = await walletClient.writeContract({
     address: VRF,
     abi: vrfAbi,
     functionName: 'manualFulfill',
-    args: [SEQUENCE, MANUAL_SEED]
+    args: [COIN_ADDRESS, CYCLE_NUMBER, MANUAL_SEED]
   });
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash: h });
-  console.log(`manualFulfill tx: ${h}`);
-  console.log(`Status: ${receipt.status}`);
+  console.log(`tx: ${h}`);
+  console.log(`status: ${receipt.status}`);
+  console.log('manualFulfill complete ✅');
 }
 
 main().catch(console.error);
