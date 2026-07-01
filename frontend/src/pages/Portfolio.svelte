@@ -1,6 +1,8 @@
 <script lang="ts">
   import CountdownTimer from '$components/shared/CountdownTimer.svelte';
   import Badge from '$components/shared/Badge.svelte';
+  import { getPortfolio } from '$lib/api';
+  import { onMount } from 'svelte';
 
   type Filter = 'all' | 'active' | 'pumped' | 'rugged';
 
@@ -24,14 +26,35 @@
 
   let filter = $state<Filter>('all');
   let buyAmounts: Record<string, string> = {};
+  let entries: Entry[] = $state([]);
+  let loading = $state(true);
 
-  let entries: Entry[] = [
-    { id: 'mpepe', symbol: 'MPEPE', name: 'Monad Pepe', status: 'active', entryPrice: 0.000038, currentPrice: 0.000042, amount: 240, cycleEnd: Date.now() + 3600000 * 3 + 1200000, round: 2, image: 'https://placehold.co/40/7c3aed/ffffff?text=P', isFoundingProject: true },
-    { id: 'rdoge', symbol: 'RDOGE', name: 'Rug Doge', status: 'rugged', entryPrice: 0.000050, exitPrice: 0.000031, amount: 240, pnl: -89, pnlPercent: -38, isFoundingMember: true },
-    { id: 'crab', symbol: 'CRAB', name: 'Crab Coin', status: 'pumped', entryPrice: 0.000010, exitPrice: 0.000018, amount: 260, pnl: 210, pnlPercent: 80 },
-    { id: 'mcat', symbol: 'MCAT', name: 'Monad Cat', status: 'active', entryPrice: 0.000004, currentPrice: 0.000005, amount: 180, cycleEnd: Date.now() + 1800000, round: 3, image: 'https://placehold.co/40/7c3aed/ffffff?text=C' },
-    { id: 'pog', symbol: 'POG', name: 'Pog Coin', status: 'rugged', entryPrice: 0.000012, exitPrice: 0.000007, amount: 120, pnl: -46, pnlPercent: -39, isFoundingMember: true },
-  ];
+  onMount(async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) { loading = false; return; }
+      const user = JSON.parse(userStr);
+      const data = await getPortfolio(user.address);
+      entries = (data.positions || []).map((p: any) => ({
+        id: p.tokenAddress,
+        symbol: p.ticker,
+        name: p.coin,
+        status: p.isActive ? 'active' : 'rugged',
+        entryPrice: 0,
+        currentPrice: 0,
+        exitPrice: 0,
+        amount: Number(p.tokenBalance) / 1e18,
+        cycleEnd: 0,
+        round: p.cycleJoined + 1,
+        pnl: 0,
+        pnlPercent: 0,
+      }));
+    } catch (e) {
+      console.error('Failed to load portfolio', e);
+    } finally {
+      loading = false;
+    }
+  });
 
   let filtered = $derived(
     filter === 'all' ? entries : entries.filter(e => e.status === filter)
@@ -39,7 +62,7 @@
 
   let activeValue = $derived(
     entries.filter(e => e.status === 'active').reduce((sum, e) => {
-      const multiplier = (e.currentPrice ?? 0) / e.entryPrice;
+      const multiplier = (e.currentPrice ?? 0) / (e.entryPrice || 1);
       return sum + e.amount * multiplier;
     }, 0)
   );
@@ -58,7 +81,7 @@
 
   let ruggedExits = $derived(
     entries.filter(e => e.status === 'rugged').reduce((sum, e) => {
-      const ratio = (e.exitPrice ?? 0) / e.entryPrice;
+      const ratio = (e.exitPrice ?? 0) / (e.entryPrice || 1);
       return sum + e.amount * ratio;
     }, 0)
   );
@@ -104,6 +127,10 @@
       </div>
     </div>
   </div>
+
+  {#if loading}
+    <p class="subtitle">Loading...</p>
+  {/if}
 
   <div class="filters">
     {#each ['all', 'active', 'pumped', 'rugged'] as f}

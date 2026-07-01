@@ -1,15 +1,12 @@
 <script lang="ts">
   import { notify } from '$store/notificationStore.svelte';
   import { navigate } from '$lib/router.svelte';
+  import { loginWithX, logout, privyState } from '$lib/privy.svelte';
 
-  let connected = $state(false);
-  let fullAddress = $state('0x742d35Cc6634C0532925a3b844Bc9e7595f3bDc9');
-  let balance = $state(15.432);
   let showPopup = $state(false);
 
-  function handleConnect() {
-    connected = true;
-  }
+  let connected = $derived(privyState.isLoggedIn);
+  let shortAddr = $derived(privyState.address ? privyState.address.slice(0, 6) + '...' + privyState.address.slice(-4) : '');
 
   function togglePopup(e: MouseEvent) {
     e.stopPropagation();
@@ -17,7 +14,7 @@
   }
 
   function handleDisconnect() {
-    connected = false;
+    logout();
     showPopup = false;
   }
 
@@ -26,8 +23,9 @@
   }
 
   async function copyAddress() {
+    if (!privyState.address) { notify('No wallet available', 'error'); return; }
     try {
-      await navigator.clipboard.writeText(fullAddress);
+      await navigator.clipboard.writeText(privyState.address);
       notify('Address copied', 'success');
     } catch {
       notify('Failed to copy', 'error');
@@ -37,7 +35,11 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-{#if connected}
+{#if !privyState.isReady}
+  <button class="wallet-btn icon-only" disabled>
+    <span class="material-symbols-outlined">sync</span>
+  </button>
+{:else if connected}
   <div class="wallet-wrapper">
     <button class="wallet-btn connected" aria-label="Wallet menu" onclick={togglePopup}>
       <span class="material-symbols-outlined">menu</span>
@@ -45,7 +47,7 @@
     {#if showPopup}
       <div class="popup" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { if (e.key === 'Escape') showPopup = false; }}>
         <button class="popup-address mono" onclick={copyAddress} title="Click to copy">
-          {fullAddress}
+          {shortAddr}
           <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -53,7 +55,7 @@
         </button>
         <div class="popup-balance">
           <span class="popup-balance-label">Balance</span>
-          <span class="popup-balance-value mono">{balance.toFixed(4)} MON</span>
+          <span class="popup-balance-value mono">{privyState.balance ?? '0.0000'} MON</span>
         </div>
         <button class="popup-nav lnk" onclick={() => { showPopup = false; navigate('/leaderboard'); }}>Leaderboard</button>
         <button class="popup-nav lnk" onclick={() => { showPopup = false; navigate('/faq'); }}>FAQ</button>
@@ -63,165 +65,57 @@
     {/if}
   </div>
 {:else}
-  <button class="wallet-btn icon-only" aria-label="Connect wallet" onclick={handleConnect}>
-    <span class="material-symbols-outlined">account_balance_wallet</span>
+  <button class="wallet-btn icon-only" aria-label="Login with X" onclick={loginWithX}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
   </button>
 {/if}
 
 <style>
-  .wallet-wrapper {
-    position: relative;
-  }
+  .wallet-wrapper { position: relative; }
 
   .wallet-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: white;
-    padding: 0.5rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition: background 0.15s;
-    white-space: nowrap;
-    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: white; padding: 0.5rem 1.25rem; border-radius: 8px;
+    font-size: 0.875rem; font-weight: 600;
+    transition: background 0.15s; white-space: nowrap; cursor: pointer;
   }
-  .wallet-btn:hover {
-  }
-
   .icon-only {
-    background: transparent;
-    border: none;
-    padding: 0.25rem;
-    color: var(--text-secondary);
+    background: transparent; border: none; padding: 0.25rem; color: var(--text-secondary);
   }
-  .icon-only:hover {
-    background: transparent;
-  }
-  .icon-only .material-symbols-outlined {
-    font-size: 1.5rem;
-  }
-
+  .icon-only svg { width: 1.5rem; height: 1.5rem; display: block; }
   .connected {
-    background: transparent;
-    border: none;
-    padding: 0.25rem;
-    color: var(--text-primary);
-    gap: 0.375rem;
+    background: transparent; border: none; padding: 0.25rem; color: var(--text-primary); gap: 0.375rem;
   }
-  .connected:hover {
-    background: transparent;
-  }
-  .connected .material-symbols-outlined {
-    font-size: 1.5rem;
-  }
-
-  @media (min-width: 480px) {
-    .connected {
-      padding: 0.25rem 0.375rem;
-    }
-    .label {
-      display: inline;
-    }
-  }
+  @media (min-width: 480px) { .connected { padding: 0.25rem 0.375rem; } }
 
   .popup {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 240px;
-    background: var(--accent);
-    border: 1px solid var(--accent-hover);
-    border-radius: 10px;
-    padding: 0.5rem;
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    position: absolute; top: calc(100% + 6px); right: 0; min-width: 240px;
+    background: var(--accent); border: 1px solid var(--accent-hover);
+    border-radius: 10px; padding: 0.5rem; z-index: 300;
+    display: flex; flex-direction: column; gap: 0.25rem;
   }
-
   .popup-address {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    width: 100%;
-    font-size: 0.8125rem;
-    color: black;
-    word-break: break-all;
-    padding: 0.5rem;
-    background: rgba(0,0,0,0.1);
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s;
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;
+    font-size: 0.8125rem; color: black; word-break: break-all; padding: 0.5rem;
+    background: rgba(0,0,0,0.1); border-radius: 6px; border: none; cursor: pointer; text-align: left;
   }
-  .popup-address:hover {
-    background: rgba(0,0,0,0.15);
-  }
-
-  .copy-icon {
-    flex-shrink: 0;
-    color: black;
-  }
-
-  .popup-balance {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-  }
-
-  .popup-balance-label {
-    font-size: 0.8125rem;
-    color: black;
-    opacity: 0.7;
-  }
-
-  .popup-balance-value {
-    font-size: 0.875rem;
-    color: black;
-    font-weight: 600;
-  }
-
+  .popup-address:hover { background: rgba(0,0,0,0.15); }
+  .copy-icon { flex-shrink: 0; color: black; }
+  .popup-balance { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; }
+  .popup-balance-label { font-size: 0.8125rem; color: black; opacity: 0.7; }
+  .popup-balance-value { font-size: 0.875rem; color: black; font-weight: 600; }
   .popup-logout {
-    background: transparent;
-    color: black;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background 0.15s;
-    width: 100%;
-    text-align: center;
+    background: transparent; color: black; font-size: 0.875rem; font-weight: 600;
+    padding: 0.5rem; border-radius: 6px; width: 100%; text-align: center;
   }
-  .popup-logout:hover {
-    background: rgba(0,0,0,0.1);
-  }
-
+  .popup-logout:hover { background: rgba(0,0,0,0.1); }
   .popup-nav {
-    background: transparent;
-    color: black;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background 0.15s;
-    width: 100%;
-    text-align: left;
+    background: transparent; color: black; font-size: 0.875rem; font-weight: 600;
+    padding: 0.5rem; border-radius: 6px; width: 100%; text-align: left;
   }
-  .popup-nav:hover {
-    background: rgba(0,0,0,0.1);
-  }
-
-  .lnk {
-    display: none;
-  }
-
-  @media (max-width: 640px) {
-    .lnk {
-      display: block;
-    }
-  }
+  .popup-nav:hover { background: rgba(0,0,0,0.1); }
+  .lnk { display: none; }
+  @media (max-width: 640px) { .lnk { display: block; } }
 </style>

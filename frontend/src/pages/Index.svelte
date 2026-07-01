@@ -45,26 +45,52 @@
     activeTooltip = null;
   }
 
-  import rawCoins from '$lib/mockCoins.json';
+  import { getCoins } from '$lib/api';
+  import { onMount } from 'svelte';
 
-  const ALL_COINS = rawCoins.map((c) => ({
-    ...c,
-    cycleEnd: Date.now() + c.cycleEndOffset,
-    cycleEndOffset: undefined,
-  }));
+  let allCoins = $state<any[]>([]);
+  let loading = $state(true);
+
+  onMount(async () => {
+    try {
+      const data = await getCoins();
+      allCoins = data.map((c: any) => {
+        const cs = c.rugPool || {};
+        const poolVal = Number(cs.poolValue || '0') / 1e18;
+        const totalSupply = Number(cs.totalSupply || '1') / 1e18;
+        const price = totalSupply > 0 ? poolVal / totalSupply : 0;
+        const cycleEnd = cs.cycleDuration > 0 ? (cs.cycleStartTime + cs.cycleDuration) * 1000 : Date.now() + 86400000;
+        return {
+          id: c.address,
+          name: c.name,
+          symbol: c.ticker,
+          price,
+          priceChange24h: 0,
+          holders: cs.totalHolders || 0,
+          poolSize: poolVal,
+          cycleEnd,
+          round: (cs.cycle || 0) + 1,
+          image: c.imageUrl || '',
+          isFoundingMember: c.badge === 'member',
+          isFoundingProject: c.badge === 'project',
+        };
+      });
+    } catch (e) {
+      console.error('Failed to load coins', e);
+    } finally {
+      loading = false;
+    }
+  });
 
   const ITEMS_PER_PAGE = 10;
   let displayedCount = $state(ITEMS_PER_PAGE);
-  let loading = $state(false);
 
-  const paginatedCoins = $derived(ALL_COINS.slice(0, displayedCount));
-  const hasMore = $derived(displayedCount < ALL_COINS.length);
+  const paginatedCoins = $derived(allCoins.slice(0, displayedCount));
+  const hasMore = $derived(displayedCount < allCoins.length);
 
   function loadMore() {
-    loading = true;
     const next = displayedCount + ITEMS_PER_PAGE;
-    displayedCount = Math.min(next, ALL_COINS.length);
-    loading = false;
+    displayedCount = Math.min(next, allCoins.length);
   }
 </script>
 
@@ -73,8 +99,8 @@
 <div class="page">
   <div class="stats-bar">
     <div class="stat pool-chart" onclick={(e) => { e.stopPropagation(); toggleTooltip('pool', e); }}>
-      <span class="stat-value">$2.4M</span>
-      <span class="stat-label">Total Pool</span>
+          <span class="stat-value">${(allCoins.reduce((s, c) => s + c.poolSize, 0)).toLocaleString(undefined, {maximumFractionDigits:0})}</span>
+          <span class="stat-label">Total Pool</span>
       <svg class="stat-bg-chart" viewBox="0 0 100 40" preserveAspectRatio="none">
         <path d="M0 28 C10 30 12 18 20 16 S30 22 36 12 S46 8 50 6 S58 16 66 10 S74 14 80 4 S88 12 100 2" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="1" />
       </svg>
@@ -83,14 +109,14 @@
       {/if}
     </div>
     <div class="stat" onclick={(e) => { e.stopPropagation(); toggleTooltip('coins', e); }}>
-      <span class="stat-value">6</span>
+      <span class="stat-value">{allCoins.filter(c => c.holders > 0).length}</span>
       <span class="stat-label">Active Coins</span>
       {#if activeTooltip === 'coins'}
         <div class="tooltip" style="top: {tooltipY}px" onclick={(e) => e.stopPropagation()}>{STAT_TOOLTIPS.coins.desc}</div>
       {/if}
     </div>
     <div class="stat holders" style="padding-bottom: 0" onclick={(e) => { e.stopPropagation(); toggleTooltip('holders', e); }}>
-      <span class="stat-value">2,397</span>
+      <span class="stat-value">{allCoins.reduce((s, c) => s + c.holders, 0).toLocaleString()}</span>
       <span class="stat-label">Total Holders</span>
       <img src="/bg3.gif" alt="" class="stat-bg-img" />
       {#if activeTooltip === 'holders'}
@@ -123,7 +149,7 @@
   <div class="page-header">
     <div>
       <p class="subtitle">Buy, shill, pray, holds, dumps — all inevitable.</p>
-      <h1>memes on monad</h1>
+      <h1>$memelords</h1>
     </div>
   </div>
 

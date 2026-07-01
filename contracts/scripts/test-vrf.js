@@ -26,10 +26,11 @@ const walletClient = createWalletClient({
   account: ACCOUNT,
 });
 
-const VRF = '0x8b3b4b2747e6bae2da2bc706e1e53459974bf9cd';
-const RUG_POOL = '0x4fae7fe950beed86deb347ec49b5928c3f4efd24';
-const PYTH_ENTROPY = '0x825c0390f379c631f3cf11a82a37d20bddf93c07';
-const PYTH_PROVIDER = '0x6CC14824Ea2918f5De5C2f75A9Da968ad4BD6344';
+const DEPLOYMENTS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'deployments.json'), 'utf8'));
+const VRF = DEPLOYMENTS.contracts.VRFConsumer;
+const RUG_POOL = DEPLOYMENTS.contracts.RugPool;
+const PYTH_ENTROPY = process.env.PYTH_ENTROPY_ADDRESS;
+const PYTH_PROVIDER = process.env.PYTH_ENTROPY_PROVIDER;
 
 const state = JSON.parse(fs.readFileSync(path.join(__dirname, 'test-state.json'), 'utf8'));
 

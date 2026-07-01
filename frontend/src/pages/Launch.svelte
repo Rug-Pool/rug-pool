@@ -2,6 +2,9 @@
   import { navigate } from '$lib/router.svelte';
   import Badge from '$components/shared/Badge.svelte';
   import CountdownTimer from '$components/shared/CountdownTimer.svelte';
+  import { launch, checkMember, registerUser } from '$lib/api';
+  import { notify } from '$store/notificationStore.svelte';
+  import { privyState } from '$lib/privy.svelte';
 
   let name = $state('');
   let symbol = $state('');
@@ -13,46 +16,103 @@
   let twitter = $state('');
   let telegram = $state('');
   let website = $state('');
-  let badgeVariant = $state<'project' | 'member'>('project');
+  let badgeVariant = $state<'project' | 'member'>('member');
   let isLaunching = $state(false);
+  let isRegistered = $state(false);
+  let isRegistering = $state(false);
+  let registrationChecked = $state(false);
 
   let previewPrice = $derived(initialPrice ? '$' + parseFloat(initialPrice || '0').toFixed(6) : '$0.000000');
   let previewPool = $derived(initialLiquidity ? '$' + parseFloat(initialLiquidity || '0').toLocaleString() : '$0');
   let previewHolders = $derived('0');
   let previewSupply = $derived(maxSupply || '—');
 
+  let checkDone = $state(false);
+  $effect(() => {
+    const addr = privyState.address;
+    if (addr && !checkDone) {
+      checkDone = true;
+      checkMember(addr).then(r => {
+        isRegistered = r.registered;
+        registrationChecked = true;
+      }).catch(() => { registrationChecked = true; });
+    }
+  });
+
   function handleSymbolInput(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
     symbol = input.value.toUpperCase().slice(0, 6);
   }
 
-  function handleImageInput(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        imageUrl = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+  async function handleSubmit() {
+    if (!privyState.address) { notify('Connect wallet first', 'error'); return; }
+    if (!isRegistered) {
+      await handleRegister();
+    } else {
+      if (!name.trim() || !symbol.trim() || !description.trim() || initialPrice === '' || maxSupply === '') {
+        notify('Please fill in all required fields', 'error');
+        return;
+      }
+      await handleLaunch();
     }
   }
 
-  function handleLaunch() {
+  async function handleRegister() {
+    if (!privyState.address) return;
+    isRegistering = true;
+    try {
+      const result = await registerUser(privyState.address, badgeVariant);
+      if (result.status === 'registered' || result.status === 'already_registered') {
+        notify('Registered as founding member!', 'success');
+        isRegistered = true;
+      } else {
+        notify('Registration failed', 'error');
+      }
+    } catch (e: any) {
+      notify(e.message || 'Registration failed', 'error');
+    }
+    isRegistering = false;
+  }
+
+  async function handleLaunch() {
+    if (!privyState.address) { notify('Connect wallet first', 'error'); return; }
     isLaunching = true;
-    setTimeout(() => {
+    try {
+      const initialPriceWei = BigInt(Math.floor(Number(initialPrice) * 1e18)).toString();
+      const maxSupplyWei = BigInt(Math.floor(Number(maxSupply) * 1e18)).toString();
+      const initialLiquidityWei = initialLiquidity ? BigInt(Math.floor(Number(initialLiquidity) * 1e18)).toString() : '0';
+      const result = await launch({
+        name,
+        ticker: symbol,
+        description,
+        imageUrl,
+        initialPrice: initialPriceWei,
+        initialLiquidity: initialLiquidityWei,
+        maxSupply: maxSupplyWei,
+        flipConfig: 33,
+        wantsVerified: badgeVariant === 'project',
+        badgeVariant,
+        creator: privyState.address,
+      });
+      if (result.status === 'success') {
+        notify('Coin launched!', 'success');
+        navigate('/');
+      } else {
+        notify('Launch reverted on chain', 'error');
+        isLaunching = false;
+      }
+    } catch (e: any) {
+      notify(e.message || 'Launch failed', 'error');
       isLaunching = false;
-      navigate('/');
-    }, 2000);
+    }
   }
 
   let isFormValid = $derived(
     name.trim().length > 0 &&
     symbol.trim().length > 0 &&
     description.trim().length > 0 &&
-    initialPrice.trim().length > 0 &&
-    initialLiquidity.trim().length > 0 &&
-    maxSupply.trim().length > 0
+    String(initialPrice).trim().length > 0 &&
+    String(maxSupply).trim().length > 0
   );
 </script>
 
@@ -66,7 +126,7 @@
     <span>Once launched you are locked like everyone else. You cannot pull liquidity, edit the coin, or exit early. Not even you.</span>
   </div>
 
-  <form class="form" onsubmit={(e) => { e.preventDefault(); handleLaunch(); }}>
+  <form class="form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
     <section class="section">
       <h2 class="section-title">Section 1 — Coin Identity</h2>
 
@@ -86,12 +146,8 @@
       </div>
 
       <div class="field">
-        <label for="image">Coin Image <span class="required">*</span> <span class="hint">(upload or paste URL)</span></label>
-        <div class="image-input-row">
-          <input id="image-file" type="file" accept="image/*" onchange={handleImageInput} class="file-input" />
-          <span class="or-divider">or</span>
-          <input type="text" bind:value={imageUrl} placeholder="https://..." />
-        </div>
+        <label for="image">Coin Image URL <span class="required">*</span></label>
+        <input type="text" bind:value={imageUrl} placeholder="https://..." />
         {#if imageUrl}
           <img src={imageUrl} alt="Preview" class="image-preview" />
         {/if}
@@ -136,6 +192,7 @@
       </div>
     </section>
 
+    {#if !isRegistered}
     <section class="section">
       <h2 class="section-title">Section 4 — Badge Selection</h2>
 
@@ -173,6 +230,7 @@
         </button>
       </div>
     </section>
+    {/if}
 
     <section class="section">
       <h2 class="section-title">Section 5 — Launch Summary</h2>
@@ -221,9 +279,13 @@
       <button
         type="submit"
         class="launch-btn"
-        disabled={!isFormValid || isLaunching}
+        disabled={isLaunching || isRegistering}
       >
-        {#if !isLaunching}
+        {#if isRegistering}
+          Registering...
+        {:else if isLaunching}
+          Launching...
+        {:else if !isRegistered}
           <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10" />
             <circle cx="12" cy="12" r="6" />
@@ -237,8 +299,23 @@
             <line x1="4.93" y1="19.07" x2="8.46" y2="15.54" />
             <line x1="15.54" y1="8.46" x2="19.07" y2="4.93" />
           </svg>
+          Register {badgeVariant === 'member' ? 'Founding Member' : 'Verified Project'} (${badgeVariant === 'project' ? '10' : '1'})
+        {:else}
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+            <line x1="12" y1="2" x2="12" y2="7" />
+            <line x1="12" y1="17" x2="12" y2="22" />
+            <line x1="2" y1="12" x2="7" y2="12" />
+            <line x1="17" y1="12" x2="22" y2="12" />
+            <line x1="4.93" y1="4.93" x2="8.46" y2="8.46" />
+            <line x1="15.54" y1="15.54" x2="19.07" y2="19.07" />
+            <line x1="4.93" y1="19.07" x2="8.46" y2="15.54" />
+            <line x1="15.54" y1="8.46" x2="19.07" y2="4.93" />
+          </svg>
+          Launch ${symbol || 'TICKER'}
         {/if}
-        {isLaunching ? 'Launching...' : `Pay $${badgeVariant === 'project' ? '10' : '1'} + gas and Launch`}
       </button>
     </section>
   </form>
@@ -368,27 +445,6 @@
   .field textarea {
     resize: vertical;
     min-height: 60px;
-  }
-
-  .image-input-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .image-input-row input[type="text"] {
-    flex: 1;
-    min-width: 150px;
-  }
-
-  .file-input {
-    font-size: 0.8125rem;
-    max-width: 200px;
-  }
-
-  .or-divider {
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
   }
 
   .image-preview {

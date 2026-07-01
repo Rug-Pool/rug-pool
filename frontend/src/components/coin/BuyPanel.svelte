@@ -1,23 +1,36 @@
 <script lang="ts">
-  let { coinId, balance = 0 }: { coinId: string; balance?: number } = $props();
+  import { buy } from '$lib/api';
+  import { notify } from '$store/notificationStore.svelte';
+
+  let { coinAddress, userAddress, balance = 0 }: { coinAddress: string; userAddress?: string; balance?: number } = $props();
 
   let amount = $state('');
   let isBuying = $state(false);
 
-  function handleBuy() {
+  async function handleBuy() {
     if (!amount || isBuying) return;
     isBuying = true;
-    setTimeout(() => {
+    try {
+      const valueWei = BigInt(Math.floor(Number(amount) * 1e18)).toString();
+      const result = await buy(coinAddress, valueWei, '0', userAddress || '');
+      if (result.status === 'success') {
+        notify('Purchase successful!', 'success');
+        amount = '';
+      } else {
+        notify('Transaction reverted on chain', 'error');
+      }
+    } catch (e: any) {
+      notify(e.message || 'Buy failed', 'error');
+    } finally {
       isBuying = false;
-      amount = '';
-    }, 2000);
+    }
   }
 
-  let isValid = $derived(amount.length > 0 && !isNaN(Number(amount)) && Number(amount) > 0);
+  let isValid = $derived(amount !== '' && !isNaN(Number(amount)) && Number(amount) > 0);
 </script>
 
 <div class="panel">
-  <h3 class="panel-title">Buy {coinId}</h3>
+  <h3 class="panel-title">Buy <span class="mono">{coinAddress.slice(0,6)}...{coinAddress.slice(-4)}</span></h3>
   <div class="input-group">
     <input
       type="number"

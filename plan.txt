@@ -1,0 +1,75 @@
+□ Write MemberRegistry.sol
+□ Write test/MemberRegistry.t.sol
+□ forge test — all pass
+□ forge build — no errors
+□ ✅ MemberRegistry done
+Hour 2 — CoinFactory.sol + VRFConsumer.sol
+
+□ Write CoinFactory.sol
+□ Write test/CoinFactory.t.sol
+□ forge test — all pass
+
+□ Write VRFConsumer.sol
+□ Write test/VRFConsumer.t.sol
+□ forge test — all pass
+□ ✅ Factory + VRF done
+Hour 3 — RugPool.sol + Treasury.sol
+
+□ Write RugPool.sol
+□ Write test/RugPool.t.sol
+□ forge test — all pass
+
+□ Write Treasury.sol
+□ Write test/Treasury.t.sol
+□ forge test — all pass
+□ forge build — all 5 contracts clean
+□ ✅ All contracts done
+Hour 4 — Deploy + JS test scripts
+
+□ Write scripts/deploy.js
+□ Deploy to Monad testnet
+□ Save all contract addresses to .env
+
+□ Write test-registry.js → run it ✅
+□ Write test-factory.js  → run it ✅
+□ Write test-vrf.js      → run it ✅
+□ Write test-rugpool.js  → run it ✅
+□ Write test-treasury.js → run it ✅
+□ ✅ All JS tests passing on testnet
+Hour 5 — Simulation + Chain script
+
+□ Write simulate.js
+  □ Register Alice, Bob, Carol
+  □ Launch coin
+  □ All three buy in
+  □ Fast forward 5min cycle
+  □ Trigger flip
+  □ Verify sacrifice mechanic
+  □ Verify exit queue order
+  □ Verify treasury split
+  □ Run it → clean output ✅
+
+□ Write chain.js
+  □ Chains all test scripts in sequence
+  □ Run it → all green ✅
+□ ✅ Full game cycle verified
+Hour 6 — API
+
+□ Write server.js (Express)
+□ POST /register    → test with curl ✅
+□ POST /launch      → test with curl ✅
+□ POST /buy         → test with curl ✅
+□ GET  /coins       → test with curl ✅
+□ GET  /coin/:id    → test with curl ✅
+□ GET  /leaderboard → test with curl ✅
+□ POST /flip        → test with curl ✅
+□ GET  /portfolio/:wallet → test with curl ✅
+□ ✅ All endpoints responding correctly
+After 6 hours — Frontend wiring (separate session)
+
+□ Replace mock coin feed with GET /coins
+□ Replace mock coin detail with GET /coin/:id
+□ Wire buy button to POST /buy
+□ Wire register to POST /register
+□ Wire leaderboard to GET /leaderboard
+□ Wire portfolio to GET /portfolio/:wallet

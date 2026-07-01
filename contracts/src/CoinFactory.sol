@@ -102,6 +102,64 @@ contract CoinFactory is Ownable {
         );
     }
 
+    function launchCoinFor(
+        address creator,
+        string calldata name,
+        string calldata ticker,
+        string calldata description,
+        string calldata imageUrl,
+        uint256 initialPrice,
+        uint256 maxSupply,
+        uint8 flipConfig,
+        bool wantsVerified
+    ) external payable onlyOwner {
+        require(MemberRegistry(memberRegistry).isRegistered(creator), "Creator not registered");
+        require(
+            flipConfig == 33 || flipConfig == 50 || flipConfig == 70 || flipConfig == 80,
+            "Invalid flip config"
+        );
+
+        if (wantsVerified) {
+            require(msg.value >= verifiedBadgeFee, "Insufficient verified fee");
+        }
+
+        RugToken token = new RugToken(name, ticker, maxSupply, address(this));
+        address tokenAddress = address(token);
+
+        coins[tokenAddress] = CoinInfo({
+            tokenAddress: tokenAddress,
+            creator: creator,
+            name: name,
+            ticker: ticker,
+            description: description,
+            imageUrl: imageUrl,
+            initialPrice: initialPrice,
+            maxSupply: maxSupply,
+            launchTime: block.timestamp,
+            isVerified: wantsVerified,
+            flipConfig: flipConfig
+        });
+
+        allCoins.push(tokenAddress);
+        creatorCoins[creator].push(tokenAddress);
+
+        if (rugPool != address(0)) {
+            uint256 initialPoolValue = (initialPrice * maxSupply) / 1e18;
+            IRugPool(rugPool).registerCoin(tokenAddress, creator, flipConfig, initialPoolValue);
+            RugToken(tokenAddress).transfer(rugPool, maxSupply);
+        }
+
+        emit CoinLaunched(
+            tokenAddress,
+            creator,
+            name,
+            ticker,
+            wantsVerified,
+            flipConfig,
+            block.timestamp
+        );
+    }
+
     function getCoin(address tokenAddress) external view returns (CoinInfo memory) {
         return coins[tokenAddress];
     }

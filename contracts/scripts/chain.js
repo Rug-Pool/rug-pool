@@ -31,13 +31,10 @@ const RUG_POOL = DEP.contracts.RugPool;
 const VRF_ADDR = DEP.contracts.VRFConsumer;
 const TREASURY = DEP.contracts.Treasury;
 
-const { generatePrivateKey } = require('viem/accounts');
 const acc = privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY);
 const pub = createPublicClient({ chain: MONAD, transport: http() });
 const w = createWalletClient({ chain: MONAD, transport: http(), account: acc });
 const ALICE = acc.address;
-const WALLETS = [];
-const NAMES = {};
 
 const registryAbi = loadAbi('MemberRegistry');
 
@@ -82,44 +79,8 @@ async function simulate() {
   const start = Date.now();
   console.log(`\n>>> Running inline simulation >>>\n`);
 
-  // ── Generate Bob and Carol wallets ──
-  console.log('Generating test wallets...');
-  const bobKey = generatePrivateKey();
-  const carolKey = generatePrivateKey();
-  const bobAcc = privateKeyToAccount(bobKey);
-  const carolAcc = privateKeyToAccount(carolKey);
-  const BOB = bobAcc.address;
-  const CAROL = carolAcc.address;
-  NAMES[BOB] = 'Bob';
-  NAMES[CAROL] = 'Carol';
-  WALLETS.push(BOB, CAROL);
-  console.log(`  Bob:   ${BOB}`);
-  console.log(`  Carol: ${CAROL}\n`);
-
-  // ── Fund Bob and Carol ──
-  console.log('Funding Bob and Carol with 1 MON each...');
-  let h = await withRetry(() => w.sendTransaction({ to: BOB, value: 1000000000000000000n }));
-  await withRetry(() => pub.waitForTransactionReceipt({ hash: h }));
-  console.log(`  Funded Bob`);
-  h = await withRetry(() => w.sendTransaction({ to: CAROL, value: 1000000000000000000n }));
-  await withRetry(() => pub.waitForTransactionReceipt({ hash: h }));
-  console.log(`  Funded Carol\n`);
-
-  // ── Register Bob and Carol ──
-  console.log('Registering wallets (0.5 MON each)...');
-  const bobClient = createWalletClient({ chain: MONAD, transport: http(), account: bobAcc });
-  const carolClient = createWalletClient({ chain: MONAD, transport: http(), account: carolAcc });
-  const REG_FEE = 500000000000000000n;
-  h = await withRetry(() => bobClient.writeContract({
-    address: REGISTRY, abi: registryAbi, functionName: 'register', value: REG_FEE,
-  }));
-  await withRetry(() => pub.waitForTransactionReceipt({ hash: h }));
-  console.log(`  Bob registered`);
-  h = await withRetry(() => carolClient.writeContract({
-    address: REGISTRY, abi: registryAbi, functionName: 'register', value: REG_FEE,
-  }));
-  await withRetry(() => pub.waitForTransactionReceipt({ hash: h }));
-  console.log(`  Carol registered\n`);
+  // ── Note: only deployer wallet used to conserve MON ──
+  console.log('Using deployer wallet for all actions (testnet balance limited).\n');
 
   // ── Launch a fresh coin ──
   console.log('Launching CHAIN coin...');
@@ -146,23 +107,23 @@ async function simulate() {
   }));
   console.log('  cycleDuration now: 60s ✅\n');
 
-  // ── Staggered buys ──
-  async function doBuy(client, wallet, label, amount) {
-    const bh = await withRetry(() => client.writeContract({
+  // ── Staggered buys (Alice buys 3 times to simulate 3 wallets) ──
+  async function doBuy(amount) {
+    const bh = await withRetry(() => w.writeContract({
       address: RUG_POOL, abi: rugAbi, functionName: 'buy',
       args: [coinAddr, 0n], value: amount,
     }));
     await withRetry(() => pub.waitForTransactionReceipt({ hash: bh }));
-    const bal = await pub.readContract({ address: RUG_POOL, abi: rugAbi, functionName: 'holders', args: [coinAddr, wallet] });
-    console.log(`  ${label} bought ${(Number(bal[2]) / 1e18).toFixed(2)} CHAIN for ${Number(amount) / 1e18} MON`);
+    const bal = await pub.readContract({ address: RUG_POOL, abi: rugAbi, functionName: 'holders', args: [coinAddr, ALICE] });
+    console.log(`  Alice bought ${(Number(bal[2]) / 1e18).toFixed(2)} CHAIN for ${Number(amount) / 1e18} MON`);
   }
 
-  await doBuy(w, ALICE, 'Alice', 500000000000000000n);
+  await doBuy(50000000000000000n); // 0.05 MON
   console.log('  Waiting 5s...'); await sleep(5000);
-  await doBuy(bobClient, BOB, 'Bob', 300000000000000000n);
+  await doBuy(30000000000000000n); // 0.03 MON
   console.log('  Waiting 5s...'); await sleep(5000);
-  await doBuy(carolClient, CAROL, 'Carol', 200000000000000000n);
-  console.log('  All buys confirmed ✅\n');
+  await doBuy(20000000000000000n); // 0.02 MON
+  console.log('  Buys confirmed ✅\n');
 
   // ── Wait for cycle to end ──
   console.log('Waiting for cycle to end (60s)...');
@@ -195,20 +156,16 @@ async function simulate() {
 
   // ── Verify outcomes ──
   console.log('Verifying outcomes...\n');
-  for (let i = 0; i < WALLETS.length; i++) {
-    const wallet = WALLETS[i];
-    const name = NAMES[wallet] || `Wallet ${i}`;
-    const h = await pub.readContract({ address: RUG_POOL, abi: rugAbi, functionName: 'holders', args: [coinAddr, wallet] });
-    const outcome = await pub.readContract({
-      address: VRF_ADDR, abi: vrfAbi, functionName: 'deriveOutcome',
-      args: [TEST_SEED, wallet, 1n, 33],
-    });
-    const bal = await pub.getBalance({ address: wallet });
-    const label = outcome ? 'HEADS' : 'TAILS';
-    const detail = outcome ? 'exited with payout' : 'sacrificed';
-    console.log(`  ${name} (${wallet.slice(0, 10)}...): ${label} — ${detail}`);
-    console.log(`    tokens: ${(Number(h[2]) / 1e18).toFixed(2)} CHAIN, MON: ${(Number(bal) / 1e18).toFixed(4)} MON`);
-  }
+  const h = await pub.readContract({ address: RUG_POOL, abi: rugAbi, functionName: 'holders', args: [coinAddr, ALICE] });
+  const outcome = await pub.readContract({
+    address: VRF_ADDR, abi: vrfAbi, functionName: 'deriveOutcome',
+    args: [TEST_SEED, ALICE, 1n, 33],
+  });
+  const bal = await pub.getBalance({ address: ALICE });
+  const label = outcome ? 'HEADS' : 'TAILS';
+  const detail = outcome ? 'exited with payout' : 'sacrificed';
+  console.log(`  Alice (${ALICE.slice(0, 10)}...): ${label} — ${detail}`);
+  console.log(`    tokens: ${(Number(h[2]) / 1e18).toFixed(2)} CHAIN, MON: ${(Number(bal) / 1e18).toFixed(4)} MON`);
 
   const coin = await pub.readContract({ address: RUG_POOL, abi: rugAbi, functionName: 'coins', args: [coinAddr] });
   console.log(`\n  Coin: cycle=${Number(coin[2])} active=${coin[6]} pool=${(Number(coin[8]) / 1e18).toFixed(4)} MON`);

@@ -4,6 +4,7 @@
   import Footer from '$components/shared/Footer.svelte';
   import Notification from '$components/shared/Notification.svelte';
   import { initRouter, getRoute, navigate } from '$lib/router.svelte';
+  import { initPrivy, handleOAuthRedirect } from '$lib/privy.svelte';
   import Index from './pages/Index.svelte';
   import CoinDetail from './pages/CoinDetail.svelte';
   import Leaderboard from './pages/Leaderboard.svelte';
@@ -16,7 +17,9 @@
   let route = $state(getRoute());
   let splash = $state(true);
 
-  onMount(() => {
+  onMount(async () => {
+    await initPrivy();
+    await handleOAuthRedirect();
     initRouter();
     route = getRoute();
     window.addEventListener('hashchange', () => {

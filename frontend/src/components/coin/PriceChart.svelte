@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { createChart, type IChartApi, type ISeriesApi, type LineData, type Time } from 'lightweight-charts';
 
   let { data = [], pair = '' }: { data?: { time: number; price: number }[]; pair?: string } = $props();
@@ -10,6 +10,14 @@
 
   function initChart() {
     if (!containerEl || data.length < 2) return;
+
+    if (chart) {
+      chart.remove();
+      chart = null;
+      lineSeries = null;
+    }
+
+    containerEl.innerHTML = '';
 
     chart = createChart(containerEl, {
       layout: {
@@ -72,13 +80,21 @@
     }
   }
 
-  onMount(() => {
-    initChart();
-    window.addEventListener('resize', handleResize);
+  $effect(() => {
+    if (containerEl && data.length >= 2) {
+      initChart();
+    }
+  });
+
+  $effect(() => {
+    if (containerEl) {
+      const ro = new ResizeObserver(handleResize);
+      ro.observe(containerEl);
+      return () => ro.disconnect();
+    }
   });
 
   onDestroy(() => {
-    window.removeEventListener('resize', handleResize);
     if (chart) {
       chart.remove();
       chart = null;
@@ -123,5 +139,7 @@
     width: 100%;
     height: 300px;
     min-height: 250px;
+    position: relative;
+    overflow: hidden;
   }
 </style>

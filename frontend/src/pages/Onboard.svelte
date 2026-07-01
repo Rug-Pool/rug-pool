@@ -1,17 +1,27 @@
 <script lang="ts">
   import { navigate } from '$lib/router.svelte';
   import Badge from '$components/shared/Badge.svelte';
+  import { register } from '$lib/api';
+  import { notify } from '$store/notificationStore.svelte';
 
   let step = $state(1);
   let isPaying = $state(false);
   let selectedTier = $state<'member' | 'project'>('member');
 
-  function handlePay() {
+  async function handlePay() {
     isPaying = true;
-    setTimeout(() => {
+    try {
+      const result = await register();
+      if (result.status === 'success') {
+        step = 2;
+      } else {
+        notify('Registration reverted on chain', 'error');
+        isPaying = false;
+      }
+    } catch (e: any) {
+      notify(e.message || 'Registration failed', 'error');
       isPaying = false;
-      step = 2;
-    }, 2000);
+    }
   }
 </script>
 

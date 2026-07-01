@@ -26,6 +26,18 @@ contract MemberRegistry is Ownable {
         emit MemberRegistered(msg.sender, block.timestamp, totalMembers);
     }
 
+    function registerFor(address user) external payable onlyOwner {
+        require(!isRegistered[user], "Already registered");
+        require(msg.value == registrationFee, "Incorrect fee");
+        require(totalMembers < MAX_FOUNDING_MEMBERS, "Max founding members reached");
+
+        isRegistered[user] = true;
+        memberSince[user] = block.timestamp;
+        totalMembers++;
+
+        emit MemberRegistered(user, block.timestamp, totalMembers);
+    }
+
     function getMemberSince(address wallet) external view returns (uint256) {
         return memberSince[wallet];
     }
