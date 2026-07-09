@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: rug-pool-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: npm start
